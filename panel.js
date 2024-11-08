@@ -49,10 +49,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const fotoPreview = document.getElementById('fotoPreview');
             const imageDataUrl = fotoPreview.src;
 
-            // Generar el PDF antes de intentar el registro
+            // Generar el PDF
             generarPDF(nombre, apellido, dni, fecha, imageDataUrl);
 
-            // Guardar la imagen en el servidor y registrar los datos
+            // Intentar enviar los datos de la imagen al servidor
             try {
                 const blob = await (await fetch(imageDataUrl)).blob();
                 const formData = new FormData();
@@ -186,9 +186,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 doc.text(`Fecha de Alta: ${fecha}`, 40, 48);
 
                 // Descargar el PDF
-                console.log("guardando pdf")
+                console.log("Generando y guardando el PDF...");
                 doc.save('credencial_ambulante.pdf');
             });
+        };
+
+        // Manejo de carga de imagen si falla el evento onload
+        img.onerror = () => {
+            console.error('Error al cargar la imagen del logo.');
+            alert('Hubo un problema al cargar la imagen del logo.');
         };
     }
 });
