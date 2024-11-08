@@ -49,7 +49,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const fotoPreview = document.getElementById('fotoPreview');
             const imageDataUrl = fotoPreview.src;
 
-            // Guardar la imagen en el servidor
+            // Generar el PDF antes de intentar el registro
+            generarPDF(nombre, apellido, dni, fecha, imageDataUrl);
+
+            // Guardar la imagen en el servidor y registrar los datos
             try {
                 const blob = await (await fetch(imageDataUrl)).blob();
                 const formData = new FormData();
@@ -138,5 +141,53 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Tu navegador no soporta acceso a la cámara.');
             }
         });
+    }
+
+    function generarPDF(nombre, apellido, dni, fecha, imageDataUrl) {
+        const { jsPDF } = window.jspdf;
+        const logoPath = '/assets/logo_64.png'; // Asegúrate de que esta ruta sea correcta
+
+        if (!imageDataUrl || imageDataUrl === '') {
+            alert('Debe capturar una foto antes de generar el PDF.');
+            return;
+        }
+
+        const doc = new jsPDF('landscape', 'mm', [120, 54]);
+
+        const img = new Image();
+        img.src = logoPath;
+        img.onload = () => {
+            doc.addImage(img, 'PNG', 10, 5, 30, 12); // Agregar el logo al PDF
+
+            // Generar el código QR
+            const qrData = `Nombre: ${nombre}, Apellido: ${apellido}, DNI: ${dni}, Fecha: ${fecha}`;
+            const qrCodeCanvas = document.createElement('canvas');
+            QRCode.toCanvas(qrCodeCanvas, qrData, () => {
+                const qrImageDataUrl = qrCodeCanvas.toDataURL('image/png');
+                doc.addImage(qrImageDataUrl, 'PNG', 10, 20, 25, 25); // Agregar el QR al PDF
+
+                // Agregar un fondo blanco antes de la imagen de la foto
+                doc.setFillColor(255, 255, 255);
+                doc.roundedRect(90, 12, 25, 30, 3, 3, 'F');
+
+                // Agregar la foto del usuario
+                doc.addImage(imageDataUrl, 'PNG', 92, 12, 25, 30);
+
+                // Agregar el texto
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "bold");
+                doc.text('Detalles del Vendedor', 40, 20);
+
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.text(`Nombre: ${nombre}`, 40, 27);
+                doc.text(`Apellido: ${apellido}`, 40, 34);
+                doc.text(`DNI: ${dni}`, 40, 41);
+                doc.text(`Fecha de Alta: ${fecha}`, 40, 48);
+
+                // Descargar el PDF
+                doc.save('credencial_ambulante.pdf');
+            });
+        };
     }
 });
