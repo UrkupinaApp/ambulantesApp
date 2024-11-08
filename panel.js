@@ -30,7 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
                         <img id="fotoPreview" style="display: none; width: 320px; height: 240px; margin-top: 10px;" />
                     </div>
-                    <button type="submit" class="btn btn-primary">Registrar</button>
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary">Registrar</button>
+                        <button type="button" class="btn btn-danger" id="generarCredencial">Generar Credencial</button>
+                    </div>
                 </form>
             </div>
         `;
@@ -38,10 +41,15 @@ document.addEventListener('DOMContentLoaded', () => {
         iniciarCapturaFoto();
 
         const altaForm = document.getElementById('altaForm');
+        const generarCredencialButton = document.getElementById('generarCredencial');
+
         altaForm.addEventListener('submit', async (event) => {
             event.preventDefault();
+            // Aquí va el código para manejar la lógica de registro
+            alert('Formulario enviado para registro.'); // Mensaje de prueba para el botón de registrar
+        });
 
-            // Obtener los datos del formulario
+        generarCredencialButton.addEventListener('click', () => {
             const nombre = document.getElementById('nombre').value;
             const apellido = document.getElementById('apellido').value;
             const dni = document.getElementById('dni').value;
@@ -49,56 +57,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const fotoPreview = document.getElementById('fotoPreview');
             const imageDataUrl = fotoPreview.src;
 
-            // Generar el PDF
-            generarPDF(nombre, apellido, dni, fecha, imageDataUrl);
-
-            // Intentar enviar los datos de la imagen al servidor
-            try {
-                const blob = await (await fetch(imageDataUrl)).blob();
-                const formData = new FormData();
-                const fileName = `${nombre}_${dni}.png`; // Nombre del archivo basado en nombre y DNI
-                formData.append('photo', blob, fileName);
-
-                const uploadResponse = await fetch('https://xn--urkupia-9za.store/api/vendedores/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!uploadResponse.ok) {
-                    throw new Error('Error al subir la imagen');
-                }
-
-                const uploadResult = await uploadResponse.json();
-                const fotoPath = uploadResult.filePath; // Ruta de la imagen guardada
-
-                // Crear el payload para el POST
-                const payload = {
-                    nombre,
-                    apellido,
-                    dni,
-                    fecha_alta: fecha,
-                    foto_path: fotoPath
-                };
-
-                // Hacer la solicitud POST para registrar los datos
-                const response = await fetch('https://xn--urkupia-9za.store/api/vendedores/postAmbulante', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (response.ok) {
-                    alert('Vendedor registrado y datos enviados correctamente.');
-                } else {
-                    alert('Error al enviar los datos del vendedor.');
-                    console.error('Error:', response.statusText);
-                }
-            } catch (error) {
-                console.error('Error al guardar la imagen o enviar los datos:', error);
-                alert('Hubo un problema al guardar la imagen o enviar los datos del vendedor.');
+            if (!nombre || !apellido || !dni || !fecha || !imageDataUrl) {
+                alert('Por favor, completa todos los campos y captura una foto antes de generar la credencial.');
+                return;
             }
+
+            generarPDF(nombre, apellido, dni, fecha, imageDataUrl);
         });
     });
 
@@ -147,11 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const { jsPDF } = window.jspdf;
         const logoPath = '/assets/logo_64.png'; // Asegúrate de que esta ruta sea correcta
 
-        if (!imageDataUrl || imageDataUrl === '') {
-            alert('Debe capturar una foto antes de generar el PDF.');
-            return;
-        }
-
         const doc = new jsPDF('landscape', 'mm', [120, 54]);
 
         const img = new Image();
@@ -186,12 +145,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 doc.text(`Fecha de Alta: ${fecha}`, 40, 48);
 
                 // Descargar el PDF
-                console.log("Generando y guardando el PDF...");
+                console.log("Generando y descargando el PDF...");
                 doc.save('credencial_ambulante.pdf');
             });
         };
 
-        // Manejo de carga de imagen si falla el evento onload
         img.onerror = () => {
             console.error('Error al cargar la imagen del logo.');
             alert('Hubo un problema al cargar la imagen del logo.');
