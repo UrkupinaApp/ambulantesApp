@@ -186,6 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 doc.text(`Fecha de Alta: ${fecha}`, 40, 48);
 
                 // Descargar el PDF
+                console.log("guardando pdf")
                 doc.save('credencial_ambulante.pdf');
             });
         };
