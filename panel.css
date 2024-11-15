@@ -7,20 +7,17 @@ body {
     color: #e0e0e0;
 }
 
+/* Barra Lateral */
 .sidebar {
     width: 250px;
-    height: 100vh;
-    position: fixed;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* Asegura que el contenido se distribuya */
     background-color: #cbbae8;
-    padding-top: 20px;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
 }
 
 .avatar-container {
-    text-align: center;
     padding: 20px 0;
 }
 
@@ -63,16 +60,18 @@ h4 {
     color: #ffffff;
     border-radius: 5px;
     cursor: pointer;
-    text-align: center;
 }
 
 .logout-btn:hover {
     background-color: #2d2f7f;
 }
 
+/* Contenido Principal */
 .content {
     margin-left: 250px;
-    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    color: #e0e0e0;
 }
 
 .content h1 {
@@ -81,4 +80,72 @@ h4 {
 
 .content p {
     color: #b0b0c3;
+}
+
+/* Fondo de superposición para Popup */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+/* Estilos del Popup */
+.popup {
+    background-color: #fff;
+    padding: 20px;
+    width: 90%;
+    max-width: 400px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    text-align: center;
+}
+
+.popup h3 {
+    margin-top: 0;
+    font-size: 1.5em;
+    color: #333;
+}
+
+/* Botones en el Popup */
+.popup button {
+    padding: 10px 15px;
+    margin: 10px 5px;
+    font-size: 1em;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.popup .btn-danger {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.popup .btn-danger:hover {
+    background-color: #c0392b;
+}
+
+.popup .btn-secondary {
+    background-color: #95a5a6;
+    color: white;
+}
+
+.popup .btn-secondary:hover {
+    background-color: #7f8c8d;
+}
+
+.popup .btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.popup .btn-success:hover {
+    background-color: #218838;
 }
