@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const vendedores = await response.json();
             formContainer.innerHTML = `
                 <div class="card p-4 shadow">
-                    <h2>Lista de Vendedores Ambulantes</h2>
+                    <h2>Lista de Vendedores Ambulantes!</h2>
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped">
                             <thead class="thead-dark">
