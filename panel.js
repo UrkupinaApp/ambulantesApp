@@ -25,6 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             <input type="text" class="form-control" id="dni" required>
                         </div>
                         <div class="mb-3">
+                            <label for="local" class="form-label">Local</label>
+                            <input type="text" class="form-control" id="local" required>
+                        </div>
+                        <div class="mb-3">
                             <label for="fecha" class="form-label">Fecha de Alta</label>
                             <input type="date" class="form-control" id="fecha" required>
                         </div>
@@ -82,10 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const nombre = document.getElementById('nombre').value;
             const apellido = document.getElementById('apellido').value;
             const dni = document.getElementById('dni').value;
+            const local = document.getElementById('local').value;
             const fechaAlta = document.getElementById('fecha').value;
             const fotoPreview = document.getElementById('fotoPreview').src;
 
-            if (!nombre || !apellido || !dni || !fechaAlta || !fotoPreview) {
+            if (!nombre || !apellido || !dni || !local || !fechaAlta || !fotoPreview) {
                 alert('Por favor, completa todos los campos y captura una foto antes de registrar.');
                 return;
             }
@@ -99,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.append('nombre', nombre);
                 formData.append('apellido', apellido);
                 formData.append('dni', dni);
+                formData.append('local', local);
                 formData.append('fecha_alta', fechaAlta);
 
                 const res = await fetch('https://xn--urkupia-9za.store/api/vendedores', {
@@ -123,25 +129,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const nombre = document.getElementById('nombre').value;
             const apellido = document.getElementById('apellido').value;
             const dni = document.getElementById('dni').value;
+            const local = document.getElementById('local').value;
             const fecha = document.getElementById('fecha').value;
             const fotoPreview = document.getElementById('fotoPreview');
             const imageDataUrl = fotoPreview.src;
 
-            if (!nombre || !apellido || !dni || !fecha || !imageDataUrl) {
+            if (!nombre || !apellido || !dni || !local || !fecha || !imageDataUrl) {
                 alert('Por favor, completa todos los campos y captura una foto antes de generar la credencial.');
                 return;
             }
 
-            generarPDF(nombre, apellido, dni, fecha, imageDataUrl);
+            generarPDF(nombre, apellido, dni, local, fecha, imageDataUrl);
         });
     }
 
-    // Función para cargar la lista de vendedores
+   
+    // El resto del archivo permanece igual, incluyendo las funciones de carga de vendedores, edición, eliminación, captura de foto y generación de PDF.
     async function cargarVendedores() {
         try {
             const response = await fetch('https://xn--urkupia-9za.store/api/vendedores/get');
             if (!response.ok) throw new Error(`Error en la solicitud: ${response.statusText}`);
-
+    
             const vendedores = await response.json();
             formContainer.innerHTML = `
                 <div class="card p-4 shadow">
@@ -154,6 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <th>Nombre</th>
                                     <th>Apellido</th>
                                     <th>DNI</th>
+                                    <th>Local</th>
                                     <th>Fecha de Alta</th>
                                     <th>Foto</th>
                                     <th>Acciones</th>
@@ -166,13 +175,24 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <td>${vendedor.nombre}</td>
                                         <td>${vendedor.apellido}</td>
                                         <td>${vendedor.dni}</td>
+                                        <td>${vendedor.local}</td>
                                         <td>${vendedor.fecha_alta}</td>
                                         <td>
                                             <img src="https://xn--urkupia-9za.store${vendedor.foto_path}" alt="Foto de ${vendedor.nombre}" width="90" height="50">
                                         </td>
                                         <td>
-                                            <button class="btn btn-warning btn-sm edit-button" data-id="${vendedor.id}" data-nombre="${vendedor.nombre}" data-apellido="${vendedor.apellido}" data-dni="${vendedor.dni}" data-fecha="${vendedor.fecha_alta}">Editar</button>
-                                            <button class="btn btn-danger btn-sm delete-button" data-id="${vendedor.id}">Eliminar</button>
+                                            <button class="btn btn-warning btn-sm edit-button" 
+                                                data-id="${vendedor.id}" 
+                                                data-nombre="${vendedor.nombre}" 
+                                                data-apellido="${vendedor.apellido}" 
+                                                data-dni="${vendedor.dni}" 
+                                                data-local="${vendedor.local}" 
+                                                data-fecha="${vendedor.fecha_alta}">
+                                                Editar
+                                            </button>
+                                            <button class="btn btn-danger btn-sm delete-button" data-id="${vendedor.id}">
+                                                Eliminar
+                                            </button>
                                         </td>
                                     </tr>
                                 `).join('')}
@@ -181,13 +201,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             `;
+    
+            // Configurar eventos para los botones de editar y eliminar
             document.querySelectorAll('.edit-button').forEach(button => {
                 button.addEventListener('click', (event) => {
-                    const { id, nombre, apellido, dni, fecha } = event.target.dataset;
-                    mostrarPopupEditar(id, nombre, apellido, dni, fecha);
+                    const { id, nombre, apellido, dni, local, fecha } = event.target.dataset;
+                    mostrarPopupEditar(id, nombre, apellido, dni, local, fecha);
                 });
             });
-
+    
             document.querySelectorAll('.delete-button').forEach(button => {
                 button.addEventListener('click', (event) => {
                     const id = event.target.dataset.id;
@@ -203,9 +225,8 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
     }
-
-    // Funciones auxiliares para editar y eliminar vendedores
-    function mostrarPopupEditar(id, nombre, apellido, dni, fecha) {
+    
+    function mostrarPopupEditar(id, nombre, apellido, dni, local, fecha) {
         const popup = document.createElement('div');
         popup.classList.add('popup-overlay');
         popup.innerHTML = `
@@ -213,19 +234,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h3>Editar Vendedor</h3>
                 <form id="editarForm">
                     <div class="mb-3">
-                        <label for="nombre" class="form-label">Nombre</label>
+                        <label for="editNombre" class="form-label">Nombre</label>
                         <input type="text" class="form-control" id="editNombre" value="${nombre}" required>
                     </div>
                     <div class="mb-3">
-                        <label for="apellido" class="form-label">Apellido</label>
+                        <label for="editApellido" class="form-label">Apellido</label>
                         <input type="text" class="form-control" id="editApellido" value="${apellido}" required>
                     </div>
                     <div class="mb-3">
-                        <label for="dni" class="form-label">DNI</label>
+                        <label for="editDni" class="form-label">DNI</label>
                         <input type="text" class="form-control" id="editDni" value="${dni}" required>
                     </div>
                     <div class="mb-3">
-                        <label for="fecha" class="form-label">Fecha de Alta</label>
+                        <label for="editLocal" class="form-label">Local</label>
+                        <input type="text" class="form-control" id="editLocal" value="${local}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editFecha" class="form-label">Fecha de Alta</label>
                         <input type="date" class="form-control" id="editFecha" value="${fecha}" required>
                     </div>
                     <div class="d-flex justify-content-between">
@@ -236,31 +261,32 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
         document.body.appendChild(popup);
-
+    
         document.getElementById('cancelarEditar').addEventListener('click', () => {
             popup.remove();
         });
-
+    
         document.getElementById('editarForm').addEventListener('submit', async (event) => {
             event.preventDefault();
             const updatedData = {
                 nombre: document.getElementById('editNombre').value,
                 apellido: document.getElementById('editApellido').value,
                 dni: document.getElementById('editDni').value,
+                local: document.getElementById('editLocal').value,
                 fecha_alta: document.getElementById('editFecha').value,
             };
-
+    
             try {
                 const response = await fetch(`https://xn--urkupia-9za.store/api/vendedores/update/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(updatedData),
                 });
-
+    
                 if (response.ok) {
                     alert('Vendedor actualizado correctamente.');
                     popup.remove();
-                    vendedoresLink.click(); // Refrescar la lista
+                    cargarVendedores(); // Refrescar la lista
                 } else {
                     alert('Error al actualizar el vendedor.');
                 }
@@ -270,6 +296,78 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    
+    function mostrarPopupEditar(id, nombre, apellido, dni, local, fecha) {
+        const popup = document.createElement('div');
+        popup.classList.add('popup-overlay');
+        popup.innerHTML = `
+            <div class="popup">
+                <h3>Editar Vendedor</h3>
+                <form id="editarForm">
+                    <div class="mb-3">
+                        <label for="editNombre" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="editNombre" value="${nombre}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editApellido" class="form-label">Apellido</label>
+                        <input type="text" class="form-control" id="editApellido" value="${apellido}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDni" class="form-label">DNI</label>
+                        <input type="text" class="form-control" id="editDni" value="${dni}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editLocal" class="form-label">Local</label>
+                        <input type="text" class="form-control" id="editLocal" value="${local}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editFecha" class="form-label">Fecha de Alta</label>
+                        <input type="date" class="form-control" id="editFecha" value="${fecha}" required>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn btn-success">Guardar</button>
+                        <button type="button" class="btn btn-secondary" id="cancelarEditar">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        document.body.appendChild(popup);
+    
+        document.getElementById('cancelarEditar').addEventListener('click', () => {
+            popup.remove();
+        });
+    
+        document.getElementById('editarForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const updatedData = {
+                nombre: document.getElementById('editNombre').value,
+                apellido: document.getElementById('editApellido').value,
+                dni: document.getElementById('editDni').value,
+                local: document.getElementById('editLocal').value,
+                fecha_alta: document.getElementById('editFecha').value,
+            };
+    
+            try {
+                const response = await fetch(`https://xn--urkupia-9za.store/api/vendedores/update/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedData),
+                });
+    
+                if (response.ok) {
+                    alert('Vendedor actualizado correctamente.');
+                    popup.remove();
+                    cargarVendedores(); // Refrescar la lista
+                } else {
+                    alert('Error al actualizar el vendedor.');
+                }
+            } catch (error) {
+                console.error('Error al actualizar:', error);
+            }
+        });
+    }
+
+    
     function mostrarPopupEliminar(id) {
         const popup = document.createElement('div');
         popup.classList.add('popup-overlay');
@@ -283,21 +381,21 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
         document.body.appendChild(popup);
-
+    
         document.getElementById('cancelarEliminar').addEventListener('click', () => {
             popup.remove();
         });
-
+    
         document.getElementById('confirmarEliminar').addEventListener('click', async () => {
             try {
                 const response = await fetch(`https://xn--urkupia-9za.store/api/vendedores/delete/${id}`, {
                     method: 'DELETE',
                 });
-
+    
                 if (response.ok) {
                     alert('Vendedor eliminado correctamente.');
                     popup.remove();
-                    vendedoresLink.click(); // Refrescar la lista
+                    cargarVendedores(); // Refrescar la lista
                 } else {
                     alert('Error al eliminar el vendedor.');
                 }
@@ -307,27 +405,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Funciones auxiliares de captura de foto y generación de PDF
+    
     function iniciarCapturaFoto() {
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const captureButton = document.getElementById('capturarFoto');
         const fotoPreview = document.getElementById('fotoPreview');
-
+    
         captureButton.addEventListener('click', async () => {
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                     video.srcObject = stream;
                     video.style.display = 'block';
-
+    
                     await new Promise((resolve) => {
                         video.onloadedmetadata = () => {
                             video.play();
                             resolve();
                         };
                     });
-
+    
                     captureButton.addEventListener('click', () => {
                         const context = canvas.getContext('2d');
                         context.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -336,7 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         fotoPreview.style.display = 'block';
                         video.style.display = 'none';
                         stream.getTracks().forEach(track => track.stop()); // Detener la cámara
-
+    
                         alert('La foto se tomó correctamente.');
                     });
                 } catch (error) {
@@ -349,46 +447,65 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function generarPDF(nombre, apellido, dni, fecha, imageDataUrl) {
+    
+    function generarPDF(nombre, apellido, dni, local, fecha, imageDataUrl) {
         const { jsPDF } = window.jspdf;
+    
+        // Crear un documento en formato paisaje con dimensiones específicas
+        const doc = new jsPDF('landscape', 'mm', [120, 64]);
+    
+        // Ruta del logo o imagen fija para el carnet (asegúrate de que esté accesible)
         const logoPath = '/assets/logo_64.png';
-
-        const doc = new jsPDF('landscape', 'mm', [120, 54]);
-
+    
+        // Cargar el logo en el PDF
         const img = new Image();
         img.src = logoPath;
         img.onload = () => {
+            // Agregar el logo al PDF
             doc.addImage(img, 'PNG', 10, 5, 30, 12);
-
-            const qrData = `Nombre: ${nombre}, Apellido: ${apellido}, DNI: ${dni}, Fecha: ${fecha}`;
+    
+            // Generar un código QR con los datos del vendedor
+            const qrData = `Nombre: ${nombre}, Apellido: ${apellido}, DNI: ${dni}, Local: ${local}, Fecha: ${fecha}`;
             const qrCodeCanvas = document.createElement('canvas');
             QRCode.toCanvas(qrCodeCanvas, qrData, () => {
                 const qrImageDataUrl = qrCodeCanvas.toDataURL('image/png');
-                doc.addImage(qrImageDataUrl, 'PNG', 10, 20, 25, 25);
-
+                doc.addImage(qrImageDataUrl, 'PNG', 10, 20, 25, 25); // Agregar el QR al PDF
+    
+                // Agregar un rectángulo blanco para la foto del vendedor
                 doc.setFillColor(255, 255, 255);
                 doc.roundedRect(90, 12, 25, 30, 3, 3, 'F');
-
+    
+                // Agregar la foto del vendedor
                 doc.addImage(imageDataUrl, 'PNG', 92, 12, 25, 30);
-
+    
+                // Agregar los detalles del vendedor
                 doc.setFontSize(12);
-                doc.setFont("helvetica", "bold");
+                doc.setFont('helvetica', 'bold');
                 doc.text('Detalles del Vendedor', 40, 20);
-
+    
                 doc.setFontSize(10);
-                doc.setFont("helvetica", "normal");
+                doc.setFont('helvetica', 'normal');
                 doc.text(`Nombre: ${nombre}`, 40, 27);
                 doc.text(`Apellido: ${apellido}`, 40, 34);
                 doc.text(`DNI: ${dni}`, 40, 41);
-                doc.text(`Fecha de Alta: ${fecha}`, 40, 48);
-
-                doc.save('credencial_ambulante.pdf');
+                doc.text(`Local: ${local}`, 40, 48);
+                doc.text(`Fecha de Alta: ${fecha}`, 40, 55);
+    
+                // Guardar el PDF con un nombre dinámico
+                const nombreArchivo = `credencial_${dni}.pdf`;
+                doc.save(nombreArchivo);
             });
         };
-
+    
+        // Manejo de errores al cargar el logo
         img.onerror = () => {
             console.error('Error al cargar la imagen del logo.');
             alert('Hubo un problema al cargar la imagen del logo.');
         };
     }
+    
+
+
 });
+
+
